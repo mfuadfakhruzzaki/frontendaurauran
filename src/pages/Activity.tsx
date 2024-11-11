@@ -7,55 +7,61 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
 import { Navbar } from "../components/Navbar";
 import { Leftbar } from "../components/Leftbar";
-import { Rightbar } from "../components/Rightbar";
+// import { Rightbar } from "../components/Rightbar";
 
-interface Notification {
-  avatar: string;
-  name: string;
-  date: string;
-  content: string;
-  tags: string[];
-}
+// interface Notification {
+//   avatar: string;
+//   name: string;
+//   date: string;
+//   content: string;
+//   tags: string[];
+// }
 
 export default function Component() {
-  const notifications: Notification[] = [
-    {
-      avatar: "OD",
-      name: "Oren Opsim Dipsum Amed",
-      date: "Apr 2, 2023",
-      content:
-        'Project "Cloth" Has Been Updated! New update has been deployed! - You can check it out at cloth project All!',
-      tags: ["Tech", "AI"],
-    },
-    {
-      avatar: "RW",
-      name: "Raditya Wisnu Cahyo Nugroho",
-      date: "Apr 2, 2023",
-      content:
-        "Raditya's Task Has Been Completed on \"Website Development\" Project! Hey guys, I've done my work for this project. You can check it out rn!",
-      tags: ["Tech", "AI"],
-    },
-    {
-      avatar: "NF",
-      name: "Najla Fairuz",
-      date: "Apr 2, 2023",
-      content:
-        'Najla Added a Notes to "cloth" project! Hey, I added a notes to this project. Please pay attention!',
-      tags: ["Tech", "AI"],
-    },
-  ];
+  // const notifications: Notification[] = [
+  //   {
+  //     avatar: "OD",
+  //     name: "Oren Opsim Dipsum Amed",
+  //     date: "Apr 2, 2023",
+  //     content:
+  //       'Project "Cloth" Has Been Updated! New update has been deployed! - You can check it out at cloth project All!',
+  //     tags: ["Tech", "AI"],
+  //   },
+  //   {
+  //     avatar: "RW",
+  //     name: "Raditya Wisnu Cahyo Nugroho",
+  //     date: "Apr 2, 2023",
+  //     content:
+  //       "Raditya's Task Has Been Completed on \"Website Development\" Project! Hey guys, I've done my work for this project. You can check it out rn!",
+  //     tags: ["Tech", "AI"],
+  //   },
+  //   {
+  //     avatar: "NF",
+  //     name: "Najla Fairuz",
+  //     date: "Apr 2, 2023",
+  //     content:
+  //       'Najla Added a Notes to "cloth" project! Hey, I added a notes to this project. Please pay attention!',
+  //     tags: ["Tech", "AI"],
+  //   },
+  // ];
 
   return (
     <div className="flex min-h-screen bg-background">
       {/* Left Sidebar */}
-      <div className="hidden lg:block">
+      <div className="hidden lg:block fixed top-0 left-0 h-full w-64">
         <Leftbar />
       </div>
 
       {/* Main Content */}
-      <div className="flex-1 flex flex-col">
+      <div
+        className="flex flex-col 
+          min-h-screen 
+          lg:ml-64 
+          transition-all 
+          duration-300"
+      >
         <Navbar />
-        <main className="p-6 flex-1 border-r">
+        <main className="p-6">
           {/* Header */}
           <header className="border-b p-4">
             <div className="flex items-center gap-2 mb-2">
@@ -205,8 +211,8 @@ export default function Component() {
         </main>
       </div>
 
-      {/* Right Sidebar - Notifications */}
-      <Rightbar notifications={notifications} />
+      {/* Right Sidebar - Notifications
+      <Rightbar notifications={notifications} /> */}
     </div>
   );
 }

@@ -43,10 +43,17 @@ export default function Component() {
 
   return (
     <div className="flex min-h-screen bg-background">
-      <div className="hidden lg:block">
+      <div className="hidden lg:block fixed top-0 left-0 h-full w-64">
         <Leftbar />
       </div>
-      <div className="flex-1 flex flex-col">
+      <div
+        className="flex-1 flex flex-col  
+          min-h-screen 
+          lg:ml-64
+          lg:mr-80 
+          transition-all 
+          duration-300"
+      >
         <Navbar />
         <main className="p-6">
           <div className="flex justify-between items-center mb-8">
@@ -86,7 +93,7 @@ export default function Component() {
           </div>
         </main>
       </div>
-      <div className="hidden xl:block">
+      <div className="hidden xl:block fixed right-0 top-0">
         <Rightbar />
       </div>
     </div>

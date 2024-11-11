@@ -1,6 +1,6 @@
 import { Navbar } from "../components/Navbar";
 import { Leftbar } from "../components/Leftbar";
-import { Rightbar } from "../components/Rightbar";
+// import { Rightbar } from "../components/Rightbar";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -16,9 +16,9 @@ export default function Dashboard() {
       </div>
 
       {/* Fixed Rightbar (if applicable) */}
-      <div className="hidden xl:block fixed top-0 right-0 h-full w-64">
+      {/* <div className="hidden xl:block fixed top-0 right-0 h-full w-64">
         <Rightbar />
-      </div>
+      </div> */}
 
       {/* Main Content Area */}
       <div
@@ -26,7 +26,6 @@ export default function Dashboard() {
           flex flex-col 
           min-h-screen 
           lg:ml-64 
-          xl:mr-64 
           transition-all 
           duration-300
         "

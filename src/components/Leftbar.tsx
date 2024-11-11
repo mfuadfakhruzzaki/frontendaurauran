@@ -16,7 +16,7 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { Separator } from "@/components/ui/separator";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom"; // Import useLocation
 import { AuthContext } from "@/contexts/AuthContext";
 
 interface Project {
@@ -41,6 +41,8 @@ export function Leftbar() {
   const settingsRef = useRef<HTMLDivElement>(null);
 
   const navigate = useNavigate();
+  const location = useLocation(); // Use useLocation
+  const currentPath = location.pathname;
 
   // Pastikan AuthContext tidak null
   const authContext = useContext(AuthContext);
@@ -114,10 +116,7 @@ export function Leftbar() {
         if (axios.isAxiosError(error)) {
           const axiosError = error as AxiosError;
           if (axiosError.response) {
-            setError(
-              `Error ${axiosError.response.status}
-              }`
-            );
+            setError(`Error ${axiosError.response.status}`);
           } else if (axiosError.request) {
             setError(
               "Tidak ada respons dari server. Periksa koneksi jaringan Anda."
@@ -190,6 +189,13 @@ export function Leftbar() {
     }
   };
 
+  // Define navigation items (optional, for refactoring)
+  const navItems = [
+    { label: "Home", icon: Home, path: "/" },
+    { label: "Activity", icon: Activity, path: "/activities" },
+    { label: "Projects", icon: LayoutGrid, path: "/projects" },
+  ];
+
   return (
     <div className="fixed flex h-screen w-64 flex-col border-r bg-background">
       {/* Logo */}
@@ -201,30 +207,28 @@ export function Leftbar() {
       {/* Main Navigation */}
       <nav className="flex-none p-2">
         <div className="space-y-1">
-          <Button
-            variant="secondary"
-            className="w-full justify-start gap-2"
-            onClick={() => navigate("/")}
-          >
-            <Home className="h-4 w-4" />
-            Home
-          </Button>
-          <Button
-            variant="ghost"
-            className="w-full justify-start gap-2"
-            onClick={() => navigate("/activities")}
-          >
-            <Activity className="h-4 w-4" />
-            Activity
-          </Button>
-          <Button
-            variant="ghost"
-            className="w-full justify-start gap-2"
-            onClick={() => navigate("/projects")}
-          >
-            <LayoutGrid className="h-4 w-4" />
-            Projects
-          </Button>
+          {navItems.map((item) => {
+            const Icon = item.icon;
+            const isActive =
+              item.path === "/"
+                ? currentPath === item.path
+                : currentPath.startsWith(item.path);
+
+            return (
+              <Button
+                key={item.label}
+                variant={isActive ? "secondary" : "ghost"}
+                className={cn(
+                  "w-full justify-start gap-2",
+                  isActive ? "bg-accent" : ""
+                )}
+                onClick={() => navigate(item.path)}
+              >
+                <Icon className="h-4 w-4" />
+                {item.label}
+              </Button>
+            );
+          })}
         </div>
       </nav>
 
@@ -343,7 +347,7 @@ function ProjectItem({ project }: { project: Project }) {
   return (
     <button
       className="flex w-full items-center gap-2 rounded-lg p-2 text-sm hover:bg-accent"
-      onClick={() => navigate(`/projects/${project.id}`)} // Navigasi ke detail proyek
+      onClick={() => navigate(`/projects/${project.id}`)}
     >
       <div
         className={cn(
