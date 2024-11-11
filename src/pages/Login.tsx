@@ -1,18 +1,35 @@
-import { useState } from "react";
+/* eslint-disable @typescript-eslint/no-explicit-any */
+import { useState, useContext } from "react";
 import { Eye, EyeOff } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Link } from "react-router-dom"; // Import Link for navigation
+import { Link, useNavigate } from "react-router-dom";
+import { AuthContext } from "@/contexts/AuthContext";
 
-export default function Component() {
+export default function Login() {
   const [showPassword, setShowPassword] = useState(false);
+  const navigate = useNavigate();
+
+  // Ensure AuthContext is not null
+  const authContext = useContext(AuthContext);
+  if (!authContext) {
+    throw new Error("AuthContext must be used within an AuthProvider");
+  }
+  const { login } = authContext;
+
   const [formData, setFormData] = useState({
     email: "",
     password: "",
     rememberMe: false,
+  });
+
+  const [errors, setErrors] = useState({
+    email: "",
+    password: "",
+    general: "",
   });
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -21,11 +38,74 @@ export default function Component() {
       ...prev,
       [name]: type === "checkbox" ? checked : value,
     }));
+    // Clear error when user starts typing
+    setErrors((prev) => ({
+      ...prev,
+      [name]: "",
+      general: "",
+    }));
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const validateForm = () => {
+    let valid = true;
+    const newErrors: any = {};
+
+    if (!formData.email) {
+      newErrors.email = "Email wajib diisi";
+      valid = false;
+    } else if (!/\S+@\S+\.\S+/.test(formData.email)) {
+      newErrors.email = "Format email tidak valid";
+      valid = false;
+    }
+
+    if (!formData.password) {
+      newErrors.password = "Password wajib diisi";
+      valid = false;
+    }
+
+    setErrors(newErrors);
+    return valid;
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    console.log(formData);
+    setErrors((prev) => ({ ...prev, general: "" }));
+
+    if (!validateForm()) {
+      return;
+    }
+
+    try {
+      await login(formData.email, formData.password);
+
+      // Redirect to dashboard after successful login
+      navigate("/");
+    } catch (error: any) {
+      if (error.response && error.response.data) {
+        const serverMessage = error.response.data.message;
+        if (serverMessage.includes("Invalid email or password")) {
+          setErrors((prev) => ({
+            ...prev,
+            general: "Email atau password salah",
+          }));
+        } else if (serverMessage.includes("Email not verified")) {
+          setErrors((prev) => ({
+            ...prev,
+            general: "Email belum diverifikasi. Silakan cek email Anda.",
+          }));
+        } else {
+          setErrors((prev) => ({
+            ...prev,
+            general: serverMessage,
+          }));
+        }
+      } else {
+        setErrors((prev) => ({
+          ...prev,
+          general: "Terjadi kesalahan. Silakan coba lagi.",
+        }));
+      }
+    }
   };
 
   return (
@@ -54,6 +134,10 @@ export default function Component() {
             </div>
 
             <form onSubmit={handleSubmit} className="space-y-4">
+              {errors.general && (
+                <p className="text-red-500 text-sm">{errors.general}</p>
+              )}
+
               <div className="space-y-2">
                 <Label htmlFor="email">Email</Label>
                 <Input
@@ -64,6 +148,9 @@ export default function Component() {
                   onChange={handleInputChange}
                   placeholder="example123@gmail.com"
                 />
+                {errors.email && (
+                  <p className="text-red-500 text-sm">{errors.email}</p>
+                )}
               </div>
 
               <div className="space-y-2">
@@ -90,6 +177,9 @@ export default function Component() {
                     )}
                   </Button>
                 </div>
+                {errors.password && (
+                  <p className="text-red-500 text-sm">{errors.password}</p>
+                )}
               </div>
 
               <div className="flex items-center justify-between">

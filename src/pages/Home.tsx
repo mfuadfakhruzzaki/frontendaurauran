@@ -4,18 +4,39 @@ import { Rightbar } from "../components/Rightbar";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+
 import { MoreVertical } from "lucide-react";
 
 export default function Dashboard() {
   return (
-    <div className="flex min-h-screen bg-background">
-      <div className="hidden lg:block">
+    <div className="min-h-screen bg-background">
+      {/* Fixed Leftbar */}
+      <div className="hidden lg:block fixed top-0 left-0 h-full w-64">
         <Leftbar />
       </div>
-      <div className="flex-1 flex flex-col">
+
+      {/* Fixed Rightbar (if applicable) */}
+      <div className="hidden xl:block fixed top-0 right-0 h-full w-64">
+        <Rightbar />
+      </div>
+
+      {/* Main Content Area */}
+      <div
+        className="
+          flex flex-col 
+          min-h-screen 
+          lg:ml-64 
+          xl:mr-64 
+          transition-all 
+          duration-300
+        "
+      >
+        {/* Navbar */}
         <Navbar />
+
+        {/* Main Content */}
         <main className="p-6">
+          {/* Baru Saja Dibuka Section */}
           <div className="mb-8">
             <div className="flex items-center justify-between mb-4">
               <h2 className="text-xl font-semibold">Baru Saja Dibuka</h2>
@@ -28,11 +49,12 @@ export default function Dashboard() {
             </div>
           </div>
 
+          {/* Status Seluruh Project Anda Section */}
           <div>
             <h2 className="text-xl font-semibold mb-4">
               Status Seluruh Project Anda
             </h2>
-            <div className="grid grid-cols-3 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
               <StatusCard
                 count={4}
                 label="Assigned"
@@ -55,9 +77,6 @@ export default function Dashboard() {
           </div>
         </main>
       </div>
-      <div className="hidden xl:block">
-        <Rightbar />
-      </div>
     </div>
   );
 }
@@ -67,9 +86,6 @@ function ProjectCard() {
     <Card>
       <CardHeader className="pb-2">
         <div className="flex items-center gap-2">
-          <Avatar className="w-8 h-8">
-            <AvatarFallback>WD</AvatarFallback>
-          </Avatar>
           <div>
             <CardTitle className="text-base">Website Development</CardTitle>
             <p className="text-sm text-muted-foreground">PBO Kelas D</p>

@@ -1,15 +1,26 @@
-import { useState } from "react";
+/* eslint-disable @typescript-eslint/no-explicit-any */
+import { useState, useContext } from "react";
 import { Eye, EyeOff } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Link } from "react-router-dom"; // Import Link untuk navigasi
+import { Link, useNavigate } from "react-router-dom";
+import { AuthContext } from "@/contexts/AuthContext";
 
 export default function Register() {
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const navigate = useNavigate();
+
+  // Ensure AuthContext is not null
+  const authContext = useContext(AuthContext);
+  if (!authContext) {
+    throw new Error("AuthContext must be used within an AuthProvider");
+  }
+  const { register } = authContext;
+
   const [formData, setFormData] = useState({
     username: "",
     email: "",
@@ -19,17 +30,114 @@ export default function Register() {
     agreeToTerms: false,
   });
 
+  const [errors, setErrors] = useState({
+    username: "",
+    email: "",
+    password: "",
+    confirmPassword: "",
+    invitationCode: "",
+    agreeToTerms: "",
+    general: "",
+  });
+
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value, type, checked } = e.target;
     setFormData((prev) => ({
       ...prev,
       [name]: type === "checkbox" ? checked : value,
     }));
+    // Clear error when user starts typing
+    setErrors((prev) => ({
+      ...prev,
+      [name]: "",
+    }));
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const validateForm = () => {
+    let valid = true;
+    const newErrors: any = {};
+
+    if (!formData.username) {
+      newErrors.username = "Username is required";
+      valid = false;
+    }
+
+    if (!formData.email) {
+      newErrors.email = "Email is required";
+      valid = false;
+    } else if (!/\S+@\S+\.\S+/.test(formData.email)) {
+      newErrors.email = "Email is invalid";
+      valid = false;
+    }
+
+    if (!formData.password) {
+      newErrors.password = "Password is required";
+      valid = false;
+    } else if (formData.password.length < 6) {
+      newErrors.password = "Password must be at least 6 characters";
+      valid = false;
+    }
+
+    if (!formData.confirmPassword) {
+      newErrors.confirmPassword = "Please confirm your password";
+      valid = false;
+    } else if (formData.password !== formData.confirmPassword) {
+      newErrors.confirmPassword = "Passwords do not match";
+      valid = false;
+    }
+
+    if (!formData.agreeToTerms) {
+      newErrors.agreeToTerms = "You must agree to the terms";
+      valid = false;
+    }
+
+    setErrors(newErrors);
+    return valid;
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    console.log(formData);
+    setErrors((prev) => ({ ...prev, general: "" }));
+
+    if (!validateForm()) {
+      return;
+    }
+
+    try {
+      const payload = {
+        username: formData.username,
+        email: formData.email,
+        password: formData.password,
+        invitation_code: formData.invitationCode,
+      };
+
+      await register(payload);
+
+      alert(
+        "Registrasi berhasil! Silakan periksa email Anda untuk verifikasi."
+      );
+
+      // Redirect to login page
+      navigate("/auth/login");
+    } catch (error: any) {
+      if (error.response && error.response.data) {
+        // Server responded with a status other than 2xx
+        const serverMessage = error.response.data.message;
+        if (serverMessage.includes("Email already registered")) {
+          setErrors((prev) => ({ ...prev, email: serverMessage }));
+        } else if (serverMessage.includes("Username already taken")) {
+          setErrors((prev) => ({ ...prev, username: serverMessage }));
+        } else {
+          setErrors((prev) => ({ ...prev, general: serverMessage }));
+        }
+      } else {
+        // Network error or other errors
+        setErrors((prev) => ({
+          ...prev,
+          general: "An error occurred. Please try again.",
+        }));
+      }
+    }
   };
 
   return (
@@ -58,6 +166,10 @@ export default function Register() {
             </div>
 
             <form onSubmit={handleSubmit} className="space-y-4">
+              {errors.general && (
+                <p className="text-red-500 text-sm">{errors.general}</p>
+              )}
+
               <div className="space-y-2">
                 <Label htmlFor="username">Username</Label>
                 <Input
@@ -67,6 +179,9 @@ export default function Register() {
                   onChange={handleInputChange}
                   placeholder="example123"
                 />
+                {errors.username && (
+                  <p className="text-red-500 text-sm">{errors.username}</p>
+                )}
               </div>
 
               <div className="space-y-2">
@@ -79,6 +194,9 @@ export default function Register() {
                   onChange={handleInputChange}
                   placeholder="example123@gmail.com"
                 />
+                {errors.email && (
+                  <p className="text-red-500 text-sm">{errors.email}</p>
+                )}
               </div>
 
               <div className="space-y-2">
@@ -90,6 +208,11 @@ export default function Register() {
                   onChange={handleInputChange}
                   placeholder="Masukkan kode undangan"
                 />
+                {errors.invitationCode && (
+                  <p className="text-red-500 text-sm">
+                    {errors.invitationCode}
+                  </p>
+                )}
               </div>
 
               <div className="space-y-2">
@@ -116,6 +239,9 @@ export default function Register() {
                     )}
                   </Button>
                 </div>
+                {errors.password && (
+                  <p className="text-red-500 text-sm">{errors.password}</p>
+                )}
               </div>
 
               <div className="space-y-2">
@@ -142,6 +268,11 @@ export default function Register() {
                     )}
                   </Button>
                 </div>
+                {errors.confirmPassword && (
+                  <p className="text-red-500 text-sm">
+                    {errors.confirmPassword}
+                  </p>
+                )}
               </div>
 
               <div className="flex items-center space-x-2">
@@ -167,6 +298,9 @@ export default function Register() {
                   kite ye
                 </label>
               </div>
+              {errors.agreeToTerms && (
+                <p className="text-red-500 text-sm">{errors.agreeToTerms}</p>
+              )}
 
               <Button type="submit" className="w-full">
                 Sign Up

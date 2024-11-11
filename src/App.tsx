@@ -1,10 +1,13 @@
 import React from "react";
 import AppRoutes from "./routes";
+import { AuthProvider } from "./contexts/AuthProvider";
 
 const App: React.FC = () => {
   return (
     <div>
-      <AppRoutes />
+      <AuthProvider>
+        <AppRoutes />
+      </AuthProvider>
     </div>
   );
 };
