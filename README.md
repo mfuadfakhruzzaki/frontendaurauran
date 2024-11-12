@@ -1,50 +1,62 @@
-# React + TypeScript + Vite
+# Frontend Aurauran
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+Proyek ini merupakan bagian dari mata kuliah Pemrograman Berorientasi Objek pada Semester 5.
 
-Currently, two official plugins are available:
+## Daftar Isi
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react/README.md) uses [Babel](https://babeljs.io/) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+- [Pendahuluan](#pendahuluan)
+- [Fitur](#fitur)
+- [Instalasi](#instalasi)
+- [Penggunaan](#penggunaan)
+- [Kontribusi](#kontribusi)
+- [Lisensi](#lisensi)
 
-## Expanding the ESLint configuration
+## Pendahuluan
 
-If you are developing a production application, we recommend updating the configuration to enable type aware lint rules:
+Frontend Aurauran adalah proyek yang dikembangkan untuk mendemonstrasikan prinsip-prinsip pemrograman berorientasi objek dalam aplikasi frontend. Proyek ini bertujuan untuk memberikan contoh praktis tentang bagaimana konsep OOP dapat diterapkan dalam skenario dunia nyata.
 
-- Configure the top-level `parserOptions` property like this:
+## Fitur
 
-```js
-export default tseslint.config({
-  languageOptions: {
-    // other options...
-    parserOptions: {
-      project: ['./tsconfig.node.json', './tsconfig.app.json'],
-      tsconfigRootDir: import.meta.dirname,
-    },
-  },
-})
+- Struktur kode modular
+- Komponen yang dapat digunakan kembali
+- Manajemen state
+- Desain responsif
+- Integrasi dengan layanan backend
+
+## Instalasi
+
+Untuk menginstal proyek ini, ikuti langkah-langkah berikut:
+
+1. Clone repositori:
+
+```bash
+git clone https://github.com/mfuadfakhruzzaki/frontendaurauran.git
 ```
 
-- Replace `tseslint.configs.recommended` to `tseslint.configs.recommendedTypeChecked` or `tseslint.configs.strictTypeChecked`
-- Optionally add `...tseslint.configs.stylisticTypeChecked`
-- Install [eslint-plugin-react](https://github.com/jsx-eslint/eslint-plugin-react) and update the config:
+2. Masuk ke direktori proyek:
 
-```js
-// eslint.config.js
-import react from 'eslint-plugin-react'
-
-export default tseslint.config({
-  // Set the react version
-  settings: { react: { version: '18.3' } },
-  plugins: {
-    // Add the react plugin
-    react,
-  },
-  rules: {
-    // other rules...
-    // Enable its recommended rules
-    ...react.configs.recommended.rules,
-    ...react.configs['jsx-runtime'].rules,
-  },
-})
+```bash
+cd frontendaurauran
 ```
+
+3. Instal dependensi:
+
+```bash
+npm install
+```
+
+## Penggunaan
+
+Untuk memulai server pengembangan, jalankan:
+
+```bash
+npm start
+```
+
+Ini akan memulai server di `http://localhost:3000`. Buka URL ini di browser Anda untuk melihat aplikasi.
+
+Untuk mengembangkan menggunakan API, lihat repositori backend [di sini](https://github.com/mfuadfakhruzzaki/backendaurauran).
+
+## Lisensi
+
+Proyek ini dilisensikan di bawah Lisensi MIT. Lihat file [LICENSE](LICENSE) untuk detail lebih lanjut.
