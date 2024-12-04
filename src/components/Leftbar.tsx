@@ -16,8 +16,24 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { Separator } from "@/components/ui/separator";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
-import { useNavigate, useLocation } from "react-router-dom"; // Import useLocation
+import { useNavigate, useLocation } from "react-router-dom";
 import { AuthContext } from "@/contexts/AuthContext";
+
+// Import Dialog components
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+  DialogFooter,
+} from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
+import { Label } from "@/components/ui/label";
+
+// Import DatePicker component
+import { DatePicker } from "@/components/ui/DatePicker";
 
 interface Project {
   id: number;
@@ -29,7 +45,7 @@ interface Project {
 interface UserData {
   username: string;
   email: string;
-  // Tambahkan properti lain jika diperlukan
+  // Add other properties if needed
 }
 
 export function Leftbar() {
@@ -40,11 +56,28 @@ export function Leftbar() {
   const [error, setError] = useState<string | null>(null);
   const settingsRef = useRef<HTMLDivElement>(null);
 
+  const [isModalOpen, setIsModalOpen] = useState(false); // State for modal
+
+  // State for project creation form
+  const [projectName, setProjectName] = useState("");
+  const [projectDescription, setProjectDescription] = useState("");
+
+  // Task details
+  const [taskTitle, setTaskTitle] = useState("");
+  const [taskDescription, setTaskDescription] = useState("");
+  const [taskPriority, setTaskPriority] = useState("");
+  const [taskStatus, setTaskStatus] = useState("");
+  const [taskDeadline, setTaskDeadline] = useState<Date | null>(null);
+  const [taskAssignedTo, setTaskAssignedTo] = useState("");
+
+  const [file, setFile] = useState<File | null>(null);
+
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
   const navigate = useNavigate();
-  const location = useLocation(); // Use useLocation
+  const location = useLocation();
   const currentPath = location.pathname;
 
-  // Pastikan AuthContext tidak null
   const authContext = useContext(AuthContext);
   if (!authContext) {
     throw new Error("AuthContext must be used within an AuthProvider");
@@ -75,79 +108,66 @@ export function Leftbar() {
     }
   }, [token]);
 
-  useEffect(() => {
-    let isMounted = true; // Untuk menghindari setState pada komponen yang sudah unmounted
-    const fetchProjects = async () => {
-      if (!token) {
-        console.warn("No auth token available");
-        return;
+  const fetchProjects = async () => {
+    if (!token) {
+      console.warn("No auth token available");
+      return;
+    }
+
+    setIsLoading(true);
+    setError(null);
+    try {
+      const response = await axios.get("https://api.zacht.tech/projects", {
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
+        },
+      });
+      console.log("Projects API response:", response.data);
+
+      const projectData = response.data.data || response.data.projects || [];
+
+      if (!Array.isArray(projectData)) {
+        throw new Error("Project data structure is not as expected.");
       }
 
-      setIsLoading(true);
-      setError(null);
-      try {
-        const response = await axios.get("/api/projects", {
-          headers: {
-            Authorization: `Bearer ${token}`,
-            "Content-Type": "application/json",
-          },
-        });
-        console.log("Projects API response:", response.data); // Logging tambahan
+      const fetchedProjects: Project[] = projectData.map((project: any) => ({
+        id: project.id,
+        name: project.name,
+        count: 0,
+        icon: assignIconColor(project.id),
+      }));
 
-        // Sesuaikan akses data berdasarkan struktur respons aktual
-        const projectData = response.data.data || response.data.projects || [];
-
-        if (!Array.isArray(projectData)) {
-          throw new Error("Struktur data proyek tidak sesuai yang diharapkan.");
-        }
-
-        const fetchedProjects: Project[] = projectData.map((project: any) => ({
-          id: project.id,
-          name: project.name,
-          count: 0, // Nilai default karena API tidak menyediakan count
-          icon: assignIconColor(project.id), // Menetapkan warna ikon secara dinamis
-        }));
-
-        if (isMounted) {
-          setProjects(fetchedProjects);
-        }
-      } catch (error: any) {
-        console.error("Error fetching projects:", error);
-        if (axios.isAxiosError(error)) {
-          const axiosError = error as AxiosError;
-          if (axiosError.response) {
-            setError(`Error ${axiosError.response.status}`);
-          } else if (axiosError.request) {
-            setError(
-              "Tidak ada respons dari server. Periksa koneksi jaringan Anda."
-            );
-          } else {
-            setError(`Error: ${axiosError.message}`);
-          }
+      setProjects(fetchedProjects);
+    } catch (error: any) {
+      console.error("Error fetching projects:", error);
+      if (axios.isAxiosError(error)) {
+        const axiosError = error as AxiosError;
+        if (axiosError.response) {
+          setError(`Error ${axiosError.response.status}`);
+        } else if (axiosError.request) {
+          setError(
+            "No response from server. Please check your network connection."
+          );
         } else {
-          setError("Gagal memuat proyek.");
+          setError(`Error: ${axiosError.message}`);
         }
-      } finally {
-        if (isMounted) {
-          setIsLoading(false);
-        }
+      } else {
+        setError("Failed to load projects.");
       }
-    };
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
-    // Mengambil proyek pertama kali saat komponen dipasang
+  useEffect(() => {
     fetchProjects();
-
-    // Menetapkan interval untuk mengambil proyek secara berkala (misalnya setiap 30 detik)
-    const intervalId = setInterval(fetchProjects, 30000); // 30000 ms = 30 detik
-
-    // Membersihkan interval saat komponen di-unmount
+    const intervalId = setInterval(fetchProjects, 30000);
     return () => {
-      isMounted = false;
       clearInterval(intervalId);
     };
   }, [token]);
 
-  // Fungsi untuk menetapkan warna ikon secara dinamis berdasarkan ID proyek
   const assignIconColor = (projectId: number): "yellow" | "dark" | "gold" => {
     const colors: Array<"yellow" | "dark" | "gold"> = [
       "yellow",
@@ -157,7 +177,6 @@ export function Leftbar() {
     return colors[projectId % colors.length];
   };
 
-  // Menangani klik di luar menu pengaturan untuk menutupnya
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
       if (
@@ -179,9 +198,17 @@ export function Leftbar() {
     };
   }, [isSettingsOpen]);
 
-  // Fungsi logout
   const handleLogout = async () => {
     try {
+      await axios.post(
+        "https://api.zacht.tech/auth/logout",
+        {},
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
       await logout();
       navigate("/auth/login");
     } catch (error) {
@@ -189,149 +216,396 @@ export function Leftbar() {
     }
   };
 
-  // Define navigation items (optional, for refactoring)
   const navItems = [
     { label: "Home", icon: Home, path: "/" },
     { label: "Activity", icon: Activity, path: "/activities" },
     { label: "Projects", icon: LayoutGrid, path: "/projects" },
   ];
 
+  const handleCreateProject = async (e: React.FormEvent) => {
+    e.preventDefault();
+
+    if (!projectName) {
+      alert("Please fill out the project name.");
+      return;
+    }
+
+    setIsSubmitting(true);
+
+    try {
+      // Step 1: Create Project
+      const projectResponse = await axios.post(
+        "https://api.zacht.tech/projects",
+        {
+          name: projectName,
+          description: projectDescription,
+        },
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+            "Content-Type": "application/json",
+          },
+        }
+      );
+
+      const projectId = projectResponse.data.data?.id;
+
+      // Step 2: Optionally Create Task if taskTitle is provided
+      if (projectId && taskTitle) {
+        const taskData: any = {
+          title: taskTitle,
+          description: taskDescription,
+          priority: taskPriority.toLowerCase(),
+          status: taskStatus.toLowerCase().replace(" ", "_"),
+          assigned_to: taskAssignedTo ? parseInt(taskAssignedTo) : undefined,
+          deadline: taskDeadline ? taskDeadline.toISOString() : undefined,
+        };
+
+        // Remove undefined fields
+        Object.keys(taskData).forEach(
+          (key) => taskData[key] === undefined && delete taskData[key]
+        );
+
+        await axios.post(
+          `https://api.zacht.tech/projects/${projectId}/tasks`,
+          taskData,
+          {
+            headers: {
+              Authorization: `Bearer ${token}`,
+              "Content-Type": "application/json",
+            },
+          }
+        );
+      }
+
+      // Step 3: Optionally Upload File
+      if (projectId && file) {
+        const formData = new FormData();
+        formData.append("file", file);
+
+        await axios.post(
+          `https://api.zacht.tech/projects/${projectId}/files`,
+          formData,
+          {
+            headers: {
+              Authorization: `Bearer ${token}`,
+              "Content-Type": "multipart/form-data",
+            },
+          }
+        );
+      }
+
+      console.log("Project created successfully");
+
+      // Close the modal and reset form fields
+      setIsModalOpen(false);
+      setProjectName("");
+      setProjectDescription("");
+      setTaskTitle("");
+      setTaskDescription("");
+      setTaskPriority("");
+      setTaskStatus("");
+      setTaskDeadline(null);
+      setTaskAssignedTo("");
+      setFile(null);
+
+      // Refresh projects list
+      fetchProjects();
+    } catch (error) {
+      console.error("Error creating project:", error);
+      alert("Failed to create project. Please try again.");
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
   return (
-    <div className="fixed flex h-screen w-64 flex-col border-r bg-background">
-      {/* Logo */}
-      <div className="flex items-center gap-2 p-4">
-        <div className="h-8 w-8 rounded-full bg-blue-600" />
-        <span className="font-semibold">Awur-awuran</span>
-      </div>
-
-      {/* Main Navigation */}
-      <nav className="flex-none p-2">
-        <div className="space-y-1">
-          {navItems.map((item) => {
-            const Icon = item.icon;
-            const isActive =
-              item.path === "/"
-                ? currentPath === item.path
-                : currentPath.startsWith(item.path);
-
-            return (
-              <Button
-                key={item.label}
-                variant={isActive ? "secondary" : "ghost"}
-                className={cn(
-                  "w-full justify-start gap-2",
-                  isActive ? "bg-accent" : ""
-                )}
-                onClick={() => navigate(item.path)}
-              >
-                <Icon className="h-4 w-4" />
-                {item.label}
-              </Button>
-            );
-          })}
+    <>
+      <div className="fixed flex h-screen w-64 flex-col border-r bg-background">
+        {/* Logo */}
+        <div className="flex items-center gap-2 p-4">
+          <div className="h-8 w-8 rounded-full bg-blue-600" />
+          <span className="font-semibold">Awur-awuran</span>
         </div>
-      </nav>
 
-      <Separator className="my-2" />
-
-      {/* Projects Section */}
-      <div className="flex-1 px-4">
-        <div className="flex items-center justify-between py-2">
-          <h2 className="text-xs font-semibold text-muted-foreground">
-            PROJECTS
-          </h2>
-          <Button
-            variant="ghost"
-            size="icon"
-            className="h-5 w-5"
-            onClick={() => navigate("/projects/create")}
-            aria-label="Tambah Proyek"
-          >
-            <Plus className="h-4 w-4" />
-          </Button>
-        </div>
-        <ScrollArea className="flex-1">
+        {/* Main Navigation */}
+        <nav className="flex-none p-2">
           <div className="space-y-1">
-            {isLoading && (
-              <p className="text-sm text-center text-muted-foreground">
-                Memuat proyek...
-              </p>
-            )}
-            {error && (
-              <div className="text-sm text-center text-red-500">
-                <p>{error}</p>
-                {/* Uncomment baris berikut untuk debugging lebih lanjut */}
-                {/* <pre>{JSON.stringify(error, null, 2)}</pre> */}
-              </div>
-            )}
-            {!isLoading && !error && projects.length === 0 && (
-              <p className="text-sm text-center text-muted-foreground">
-                Tidak ada proyek.
-              </p>
-            )}
-            {!isLoading &&
-              !error &&
-              projects.map((project) => (
-                <ProjectItem key={project.id} project={project} />
-              ))}
-          </div>
-        </ScrollArea>
-      </div>
+            {navItems.map((item) => {
+              const Icon = item.icon;
+              const isActive =
+                item.path === "/"
+                  ? currentPath === item.path
+                  : currentPath.startsWith(item.path);
 
-      {/* User Profile */}
-      <div className="flex-none p-4" ref={settingsRef}>
-        <Separator className="mb-4" />
-        <div className="relative flex items-center gap-3">
-          <Avatar>
-            <AvatarImage src="/placeholder.svg" />
-            <AvatarFallback>
-              {userData?.username ? userData.username[0].toUpperCase() : "U"}
-            </AvatarFallback>
-          </Avatar>
-          <div className="flex-1 overflow-hidden">
-            <h3 className="truncate text-sm font-medium">
-              {userData?.username || "Loading..."}
-            </h3>
-            <p className="truncate text-xs text-muted-foreground">
-              {userData?.email || "Loading..."}
-            </p>
+              return (
+                <Button
+                  key={item.label}
+                  variant={isActive ? "secondary" : "ghost"}
+                  className={cn(
+                    "w-full justify-start gap-2",
+                    isActive ? "bg-accent" : ""
+                  )}
+                  onClick={() => navigate(item.path)}
+                >
+                  <Icon className="h-4 w-4" />
+                  {item.label}
+                </Button>
+              );
+            })}
           </div>
-          <Button
-            variant="ghost"
-            size="icon"
-            className="h-8 w-8"
-            onClick={() => setIsSettingsOpen((prev) => !prev)}
-            aria-label="Pengaturan"
-          >
-            <Settings2 className="h-4 w-4" />
-          </Button>
+        </nav>
 
-          {/* Dropdown Menu */}
-          {isSettingsOpen && (
-            <div className="absolute bottom-12 right-0 mt-2 w-40 rounded-md bg-white shadow-lg ring-1 ring-black ring-opacity-5 z-10">
-              <div className="py-1">
-                <Button
-                  variant="ghost"
-                  className="w-full justify-start px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
-                  onClick={() => navigate("/edit-profile")}
-                >
-                  <Edit className="mr-2 h-4 w-4" />
-                  Edit Profile
-                </Button>
-                <Button
-                  variant="ghost"
-                  className="w-full justify-start px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
-                  onClick={handleLogout}
-                >
-                  <LogOut className="mr-2 h-4 w-4" />
-                  Logout
-                </Button>
-              </div>
+        <Separator className="my-2" />
+
+        {/* Projects Section */}
+        <div className="flex-1 px-4">
+          <div className="flex items-center justify-between py-2">
+            <h2 className="text-xs font-semibold text-muted-foreground">
+              PROJECTS
+            </h2>
+            <Button
+              variant="ghost"
+              size="icon"
+              className="h-5 w-5"
+              onClick={() => setIsModalOpen(true)}
+              aria-label="Add Project"
+            >
+              <Plus className="h-4 w-4" />
+            </Button>
+          </div>
+          <ScrollArea className="flex-1">
+            <div className="space-y-1">
+              {isLoading && (
+                <p className="text-sm text-center text-muted-foreground">
+                  Loading projects...
+                </p>
+              )}
+              {error && (
+                <div className="text-sm text-center text-red-500">
+                  <p>{error}</p>
+                </div>
+              )}
+              {!isLoading && !error && projects.length === 0 && (
+                <p className="text-sm text-center text-muted-foreground">
+                  No projects.
+                </p>
+              )}
+              {!isLoading &&
+                !error &&
+                projects.map((project) => (
+                  <ProjectItem key={project.id} project={project} />
+                ))}
             </div>
-          )}
+          </ScrollArea>
+        </div>
+
+        {/* User Profile */}
+        <div className="flex-none p-4" ref={settingsRef}>
+          <Separator className="mb-4" />
+          <div className="relative flex items-center gap-3">
+            <Avatar>
+              <AvatarImage src="/placeholder.svg" />
+              <AvatarFallback>
+                {userData?.username ? userData.username[0].toUpperCase() : "U"}
+              </AvatarFallback>
+            </Avatar>
+            <div className="flex-1 overflow-hidden">
+              <h3 className="truncate text-sm font-medium">
+                {userData?.username || "Loading..."}
+              </h3>
+              <p className="truncate text-xs text-muted-foreground">
+                {userData?.email || "Loading..."}
+              </p>
+            </div>
+            <Button
+              variant="ghost"
+              size="icon"
+              className="h-8 w-8"
+              onClick={() => setIsSettingsOpen((prev) => !prev)}
+              aria-label="Settings"
+            >
+              <Settings2 className="h-4 w-4" />
+            </Button>
+
+            {/* Dropdown Menu */}
+            {isSettingsOpen && (
+              <div className="absolute bottom-12 right-0 mt-2 w-40 rounded-md bg-white shadow-lg ring-1 ring-black ring-opacity-5 z-10">
+                <div className="py-1">
+                  <Button
+                    variant="ghost"
+                    className="w-full justify-start px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                    onClick={() => navigate("/edit-profile")}
+                  >
+                    <Edit className="mr-2 h-4 w-4" />
+                    Edit Profile
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    className="w-full justify-start px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                    onClick={handleLogout}
+                  >
+                    <LogOut className="mr-2 h-4 w-4" />
+                    Logout
+                  </Button>
+                </div>
+              </div>
+            )}
+          </div>
         </div>
       </div>
-    </div>
+
+      {/* Modal for Creating New Project */}
+      {isModalOpen && (
+        <Dialog open={isModalOpen} onOpenChange={setIsModalOpen}>
+          <DialogContent className="sm:max-w-lg">
+            <DialogHeader>
+              <DialogTitle>Create New Project</DialogTitle>
+              <DialogDescription>
+                Fill out the form below to create a new project.
+              </DialogDescription>
+            </DialogHeader>
+            {/* Project Creation Form */}
+            <form onSubmit={handleCreateProject}>
+              {/* Section 1: Project Name and Description */}
+              <div className="mb-6">
+                <h3 className="text-md font-medium mb-2">Project Details</h3>
+                <div className="space-y-4">
+                  <div>
+                    <Label htmlFor="projectName">Project Name</Label>
+                    <Input
+                      id="projectName"
+                      placeholder="Project Name"
+                      value={projectName}
+                      onChange={(e) => setProjectName(e.target.value)}
+                      required
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="projectDescription">
+                      Project Description
+                    </Label>
+                    <Textarea
+                      id="projectDescription"
+                      placeholder="Project Description"
+                      value={projectDescription}
+                      onChange={(e) => setProjectDescription(e.target.value)}
+                    />
+                  </div>
+                </div>
+              </div>
+
+              {/* Section 2: Task Details (Optional) */}
+              <div className="mb-6">
+                <h3 className="text-md font-medium mb-2">
+                  Task Details (Optional)
+                </h3>
+                <div className="space-y-4">
+                  <div>
+                    <Label htmlFor="taskTitle">Task Title</Label>
+                    <Input
+                      id="taskTitle"
+                      placeholder="Task Title"
+                      value={taskTitle}
+                      onChange={(e) => setTaskTitle(e.target.value)}
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="taskDescription">Task Description</Label>
+                    <Textarea
+                      id="taskDescription"
+                      placeholder="Task Description"
+                      value={taskDescription}
+                      onChange={(e) => setTaskDescription(e.target.value)}
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="taskPriority">Priority</Label>
+                    <select
+                      id="taskPriority"
+                      value={taskPriority}
+                      onChange={(e) => setTaskPriority(e.target.value)}
+                      className="block w-full px-3 py-2 border rounded-md"
+                    >
+                      <option value="" disabled>
+                        Select Priority
+                      </option>
+                      <option value="Low">Low</option>
+                      <option value="Medium">Medium</option>
+                      <option value="High">High</option>
+                    </select>
+                  </div>
+                  <div>
+                    <Label htmlFor="taskStatus">Status</Label>
+                    <select
+                      id="taskStatus"
+                      value={taskStatus}
+                      onChange={(e) => setTaskStatus(e.target.value)}
+                      className="block w-full px-3 py-2 border rounded-md"
+                    >
+                      <option value="" disabled>
+                        Select Status
+                      </option>
+                      <option value="Pending">Pending</option>
+                      <option value="In Progress">In Progress</option>
+                      <option value="Completed">Completed</option>
+                      <option value="Cancelled">Cancelled</option>
+                    </select>
+                  </div>
+                  <div>
+                    <Label htmlFor="taskDeadline">Deadline</Label>
+                    <DatePicker
+                      selectedDate={taskDeadline}
+                      onChange={setTaskDeadline}
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="taskAssignedTo">
+                      Assigned To (User ID)
+                    </Label>
+                    <Input
+                      id="taskAssignedTo"
+                      placeholder="Assigned To (User ID)"
+                      value={taskAssignedTo}
+                      onChange={(e) => setTaskAssignedTo(e.target.value)}
+                    />
+                  </div>
+                </div>
+              </div>
+
+              {/* Section 3: File Upload (Optional) */}
+              <div className="mb-6">
+                <h3 className="text-md font-medium mb-2">
+                  Upload File (Optional)
+                </h3>
+                <div>
+                  <Label htmlFor="fileUpload">File</Label>
+                  <Input
+                    id="fileUpload"
+                    type="file"
+                    onChange={(e) => {
+                      if (e.target.files) {
+                        setFile(e.target.files[0]);
+                      }
+                    }}
+                  />
+                </div>
+              </div>
+
+              {/* Actions */}
+              <DialogFooter>
+                <Button variant="ghost" onClick={() => setIsModalOpen(false)}>
+                  Cancel
+                </Button>
+                <Button type="submit" disabled={isSubmitting}>
+                  {isSubmitting ? "Creating..." : "Create Project"}
+                </Button>
+              </DialogFooter>
+            </form>
+          </DialogContent>
+        </Dialog>
+      )}
+    </>
   );
 }
 
@@ -347,7 +621,7 @@ function ProjectItem({ project }: { project: Project }) {
   return (
     <button
       className="flex w-full items-center gap-2 rounded-lg p-2 text-sm hover:bg-accent"
-      onClick={() => navigate(`/projects/${project.id}`)}
+      onClick={() => navigate(`/project-detail/${project.id}`)}
     >
       <div
         className={cn(
