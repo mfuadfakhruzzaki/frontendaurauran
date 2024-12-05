@@ -18,7 +18,7 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v3
         with:
-          node-version: '22'  # Node.js versi 22 sesuai konfigurasi EC2 Anda
+          node-version: '22'
 
       # Step 3: Install dan Build Frontend
       - name: Install and build frontend
@@ -26,7 +26,15 @@ jobs:
           npm install --legacy-peer-deps
           npm run build
 
-      # Step 4: Deploy Frontend ke EC2
+      # Step 4: Buat Direktori .ssh dan Tambahkan Host ke known_hosts
+      - name: Setup SSH Known Hosts
+        env:
+          EC2_HOST: ${{ secrets.EC2_HOST }}
+        run: |
+          mkdir -p ~/.ssh
+          ssh-keyscan -H $EC2_HOST >> ~/.ssh/known_hosts
+
+      # Step 5: Deploy Frontend to EC2
       - name: Deploy Frontend to EC2
         env:
           EC2_HOST: ${{ secrets.EC2_HOST }}
@@ -38,7 +46,7 @@ jobs:
           scp -i private_key.pem -r ./dist/* ${EC2_USER}@${EC2_HOST}:/home/ec2-user/frontendaurauran/
           rm private_key.pem
 
-      # Step 5: Restart Nginx (Optional)
+      # Step 6: Restart Nginx (Optional)
       - name: Restart Nginx
         env:
           EC2_HOST: ${{ secrets.EC2_HOST }}
