@@ -23,7 +23,7 @@ jobs:
       # Step 3: Install dan Build Frontend
       - name: Install and build frontend
         run: |
-          npm install
+          npm install --legacy-peer-deps
           npm run build
 
       # Step 4: Deploy Frontend ke EC2
