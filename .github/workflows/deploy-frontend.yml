@@ -26,11 +26,12 @@ jobs:
           npm install --legacy-peer-deps
           npm run build
 
-      # Step 4: Add EC2 Host to known_hosts
-      - name: Add EC2 Host to known_hosts
+      # Step 4: Buat Direktori .ssh dan Tambahkan Host ke known_hosts
+      - name: Setup SSH Known Hosts
         env:
           EC2_HOST: ${{ secrets.EC2_HOST }}
         run: |
+          mkdir -p ~/.ssh
           ssh-keyscan -H $EC2_HOST >> ~/.ssh/known_hosts
 
       # Step 5: Deploy Frontend to EC2
