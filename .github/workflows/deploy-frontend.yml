@@ -1,0 +1,53 @@
+name: Deploy Frontend to EC2
+
+on:
+  push:
+    branches:
+      - main  # Workflow dijalankan hanya untuk branch `main`
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      # Step 1: Checkout kode dari repository
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      # Step 2: Setup Node.js (untuk build frontend)
+      - name: Setup Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: '22'  # Node.js versi 22 sesuai konfigurasi EC2 Anda
+
+      # Step 3: Install dan Build Frontend
+      - name: Install and build frontend
+        run: |
+          npm install --legacy-peer-deps
+          npm run build
+
+      # Step 4: Deploy Frontend ke EC2
+      - name: Deploy Frontend to EC2
+        env:
+          EC2_HOST: ${{ secrets.EC2_HOST }}
+          EC2_USER: ${{ secrets.EC2_USER }}
+          PRIVATE_KEY: ${{ secrets.EC2_PRIVATE_KEY }}
+        run: |
+          echo "${PRIVATE_KEY}" > private_key.pem
+          chmod 600 private_key.pem
+          scp -i private_key.pem -r ./dist/* ${EC2_USER}@${EC2_HOST}:/home/ec2-user/frontendaurauran/
+          rm private_key.pem
+
+      # Step 5: Restart Nginx (Optional)
+      - name: Restart Nginx
+        env:
+          EC2_HOST: ${{ secrets.EC2_HOST }}
+          EC2_USER: ${{ secrets.EC2_USER }}
+          PRIVATE_KEY: ${{ secrets.EC2_PRIVATE_KEY }}
+        run: |
+          echo "${PRIVATE_KEY}" > private_key.pem
+          chmod 600 private_key.pem
+          ssh -i private_key.pem ${EC2_USER}@${EC2_HOST} << EOF
+            sudo systemctl restart nginx
+          EOF
+          rm private_key.pem
