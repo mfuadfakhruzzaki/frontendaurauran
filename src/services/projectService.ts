@@ -1,28 +1,32 @@
 import apiClient from "./apiClient";
+import { Project } from "../types/apiTypes";
 
-export async function fetchAllProjects(token: string) {
-  try {
-    apiClient.defaults.headers.common["Authorization"] = `Bearer ${token}`;
-    const response = await apiClient.get("/projects");
-    const projectData = response.data.data || response.data.projects || [];
-    if (!Array.isArray(projectData)) {
-      throw new Error("Struktur data proyek tidak sesuai.");
-    }
-    return projectData;
-  } catch (error: any) {
-    console.error("Error fetching projects:", error);
-    throw error;
-  }
-}
-
-export async function fetchProjectById(token: string, projectId: number) {
-  try {
-    apiClient.defaults.headers.common["Authorization"] = `Bearer ${token}`;
-    const response = await apiClient.get(`/projects/${projectId}`);
+const projectService = {
+  getAllProjects: async (): Promise<Project[]> => {
+    const response = await apiClient.get<Project[]>("/projects");
     return response.data;
-  } catch (error: any) {
-    console.error("Error fetching project details:", error);
-    throw error;
-  }
-}
+  },
+  getProjectById: async (projectId: string): Promise<Project> => {
+    const response = await apiClient.get<Project>(`/projects/${projectId}`);
+    return response.data;
+  },
+  createProject: async (data: Omit<Project, "id">): Promise<Project> => {
+    const response = await apiClient.post<Project>("/projects", data);
+    return response.data;
+  },
+  updateProject: async (
+    projectId: string,
+    data: Partial<Project>
+  ): Promise<Project> => {
+    const response = await apiClient.put<Project>(
+      `/projects/${projectId}`,
+      data
+    );
+    return response.data;
+  },
+  deleteProject: async (projectId: string): Promise<void> => {
+    await apiClient.delete(`/projects/${projectId}`);
+  },
+};
 
+export default projectService;
