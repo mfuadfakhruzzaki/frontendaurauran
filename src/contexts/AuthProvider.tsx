@@ -8,31 +8,25 @@ interface AuthProviderProps {
   children: React.ReactNode;
 }
 
-// Hapus atau sesuaikan pengaturan baseURL
-// axios.defaults.baseURL = "/api"; // Tidak diperlukan jika path permintaan sudah lengkap
-
 export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const [token, setToken] = useState<string | null>(() => {
-    const storedToken = localStorage.getItem("token");
-    console.log("Token dari localStorage:", storedToken);
-    return storedToken;
+    return localStorage.getItem("token");
   });
 
   const isAuthenticated = !!token;
 
   useEffect(() => {
-    console.log("Token saat ini:", token);
     axios.defaults.headers.common["Authorization"] = token
       ? `Bearer ${token}`
       : "";
   }, [token]);
 
-  // Menambahkan Axios Interceptors
+  // **Add Axios Interceptors**
   useEffect(() => {
-    // Interceptor Request
+    // Request Interceptor
     const requestInterceptor = axios.interceptors.request.use(
       (request) => {
-        console.log("Memulai Request", {
+        console.log("Starting Request", {
           method: request.method,
           url: request.url,
           data: request.data,
@@ -41,12 +35,12 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         return request;
       },
       (error) => {
-        console.error("Error Request", error);
+        console.error("Request Error", error);
         return Promise.reject(error);
       }
     );
 
-    // Interceptor Response
+    // Response Interceptor
     const responseInterceptor = axios.interceptors.response.use(
       (response) => {
         console.log("Response:", {
@@ -57,17 +51,15 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         return response;
       },
       (error) => {
-        console.error("Error Response", {
+        console.error("Response Error", {
           status: error.response?.status,
           data: error.response?.data,
-          headers: error.response?.headers,
-          config: error.config,
         });
         return Promise.reject(error);
       }
     );
 
-    // Fungsi cleanup untuk menghapus interceptor saat komponen unmount
+    // Cleanup function to remove interceptors when component unmounts
     return () => {
       axios.interceptors.request.eject(requestInterceptor);
       axios.interceptors.response.eject(responseInterceptor);
@@ -75,48 +67,24 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   }, []);
 
   const login = async (email: string, password: string) => {
-    try {
-      const response = await axios.post(
-        "https://api.zacht.tech/auth/login", // Gunakan path tanpa '/api'
-        { email, password },
-        {
-          headers: {
-            "Content-Type": "application/json",
-          },
-        }
-      );
-      console.log("Login Response:", response.data);
-      const token = response.data.token || response.data.data?.token;
-      if (token) {
-        setToken(token);
-        localStorage.setItem("token", token);
-      } else {
-        throw new Error("Token tidak ditemukan dalam respons");
-      }
-    } catch (error: any) {
-      console.error("Login gagal:", error);
-      throw error;
-    }
+    const response = await axios.post("http://localhost:8080/auth/login", {
+      email,
+      password,
+    });
+    const token = response.data.data.token;
+    setToken(token);
+    localStorage.setItem("token", token);
   };
 
   const register = async (data: any) => {
-    try {
-      await axios.post("https://api.zacht.tech/auth/register", data, {
-        headers: {
-          "Content-Type": "application/json",
-        },
-      });
-    } catch (error) {
-      console.error("Registrasi gagal:", error);
-      throw error;
-    }
+    await axios.post("http://localhost:8080/auth/register", data);
   };
 
   const logout = async () => {
     try {
-      await axios.post("https://api.zacht.tech/auth/logout");
+      await axios.post("http://localhost:8080/auth/logout");
     } catch (error) {
-      console.error("Logout gagal:", error);
+      console.error("Logout failed:", error);
     } finally {
       setToken(null);
       localStorage.removeItem("token");
