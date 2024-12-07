@@ -1,5 +1,5 @@
 // /src/components/ui/Dialog.tsx
-import React, { ReactNode, useEffect } from "react";
+import { ReactNode, useEffect } from "react";
 import ReactDOM from "react-dom";
 import { cn } from "@/lib/utils";
 
