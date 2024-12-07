@@ -67,7 +67,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   }, []);
 
   const login = async (email: string, password: string) => {
-    const response = await axios.post("https://api.zacht.tech/auth/login", {
+    const response = await axios.post("http://localhost:8080/auth/login", {
       email,
       password,
     });
@@ -77,12 +77,12 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   };
 
   const register = async (data: any) => {
-    await axios.post("https://api.zacht.tech/auth/register", data);
+    await axios.post("http://localhost:8080/auth/register", data);
   };
 
   const logout = async () => {
     try {
-      await axios.post("https://api.zacht.tech/auth/logout");
+      await axios.post("http://localhost:8080/auth/logout");
     } catch (error) {
       console.error("Logout failed:", error);
     } finally {
