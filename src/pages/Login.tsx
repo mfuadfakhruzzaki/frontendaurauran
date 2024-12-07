@@ -1,5 +1,5 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { useState, useContext } from "react";
+import React, { useState, useContext } from "react";
 import { Eye, EyeOff } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -13,10 +13,10 @@ export default function Login() {
   const [showPassword, setShowPassword] = useState(false);
   const navigate = useNavigate();
 
-  // Ensure AuthContext is not null
+  // Menggunakan AuthContext
   const authContext = useContext(AuthContext);
   if (!authContext) {
-    throw new Error("AuthContext must be used within an AuthProvider");
+    throw new Error("AuthContext harus digunakan dalam AuthProvider");
   }
   const { login } = authContext;
 
@@ -26,11 +26,11 @@ export default function Login() {
     rememberMe: false,
   });
 
-  const [errors, setErrors] = useState({
-    email: "",
-    password: "",
-    general: "",
-  });
+  const [errors, setErrors] = useState<{
+    email?: string;
+    password?: string;
+    general?: string;
+  }>({});
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value, type, checked } = e.target;
@@ -38,7 +38,7 @@ export default function Login() {
       ...prev,
       [name]: type === "checkbox" ? checked : value,
     }));
-    // Clear error when user starts typing
+    // Menghapus error saat pengguna mulai mengetik
     setErrors((prev) => ({
       ...prev,
       [name]: "",
@@ -48,7 +48,7 @@ export default function Login() {
 
   const validateForm = () => {
     let valid = true;
-    const newErrors: any = {};
+    const newErrors: { [key: string]: string } = {};
 
     if (!formData.email) {
       newErrors.email = "Email wajib diisi";
@@ -77,12 +77,14 @@ export default function Login() {
 
     try {
       await login(formData.email, formData.password);
-
-      // Redirect to dashboard after successful login
+      // Redirect ke dashboard setelah login berhasil
       navigate("/");
     } catch (error: any) {
+      console.error("Login gagal:", error);
       if (error.response && error.response.data) {
-        const serverMessage = error.response.data.message;
+        const serverMessage =
+          error.response.data.message ||
+          "Terjadi kesalahan. Silakan coba lagi.";
         if (serverMessage.includes("Invalid email or password")) {
           setErrors((prev) => ({
             ...prev,
@@ -120,7 +122,7 @@ export default function Login() {
           <div className="flex items-center justify-center bg-muted rounded-lg p-6">
             <img
               src="/placeholder.svg?height=400&width=400"
-              alt="Security illustration"
+              alt="Ilustrasi keamanan"
               className="w-full max-w-md"
             />
           </div>
@@ -199,11 +201,11 @@ export default function Login() {
                     htmlFor="rememberMe"
                     className="text-sm text-muted-foreground leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
                   >
-                    Ingat gweh ga?
+                    Ingat saya
                   </label>
                 </div>
                 <Button variant="link" className="text-primary p-0 h-auto">
-                  Forgot Password
+                  Lupa Password
                 </Button>
               </div>
 
@@ -212,12 +214,12 @@ export default function Login() {
               </Button>
 
               <p className="text-center text-sm text-muted-foreground">
-                Aowkawok gk punya akun?{" "}
+                Belum punya akun?{" "}
                 <Link
                   to="/auth/register"
                   className="text-primary hover:underline"
                 >
-                  Sign up
+                  Daftar
                 </Link>
               </p>
             </form>
